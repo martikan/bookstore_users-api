@@ -2,9 +2,9 @@
 
 ## Index
 
-1 [Setup local development environment](#setup-local-development-environment)
-2 [Run the API with Docker](#run-the-api-with-docker)
-3 [Run the API with Kubernetes](#run-the-api-with-kubernetes)
+1 [Setup local development environment](#setup-local-development-environment)<br/>
+2 [Run the API with Docker](#run-the-api-with-docker)<br/>
+3 [Run the API with Kubernetes](#run-the-api-with-kubernetes)<br/>
 
 ## Setup local development environment
 
