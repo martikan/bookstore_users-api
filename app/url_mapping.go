@@ -7,9 +7,11 @@ import (
 func mapUrls() {
 
 	// Routes for users endpoints
-	router.GET("/users", user.GetAllUsers)
-	router.GET("/users/:id", user.GetUser)
-	router.GET("/users/search", user.SearchUser)
-	router.POST("/users", user.CreateUser)
-	router.DELETE("/users/:id", user.DeleteUser)
+	router.GET("/users", user.GetAll)
+	router.GET("/internal/users/search", user.Search)
+	router.GET("/users/:id", user.Get)
+	router.POST("/users", user.Create)
+	router.PUT("/users/:id", user.Update)
+	router.PATCH("/users/:id", user.Update)
+	router.DELETE("/users/:id", user.Delete)
 }

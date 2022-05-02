@@ -1,85 +1,163 @@
 package user
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/martikan/bookstore_users-api/datasource/mysql/users_db"
-	"github.com/martikan/bookstore_users-api/error"
-	"github.com/martikan/bookstore_users-api/util/date_utils"
+	"github.com/martikan/bookstore_users-api/errors"
+	"github.com/martikan/bookstore_users-api/util/mysql_utils"
 )
 
 const (
-	tableName = "users"
-
-	// Indexes
-
-	uniqueEmailIndex = "email_UNIQUE"
+	tableName = "USERS"
 
 	// Queries
 
-	insertUser = "INSERT INTO " + tableName + " (first_name, last_name, email, created_at) VALUES (?, ?, ?, ?);"
+	insertUser = "INSERT INTO " + tableName +
+		" (first_name, last_name, email, created_at, status, password) VALUES (?, ?, ?, ?, ?, ?);"
 
-	deleteUserById = "DELETE FROM" + tableName + " WHERE id = ?;"
+	updateUser = "UPDATE " + tableName +
+		" SET" +
+		" first_name = ?, last_name = ?, email = ?, status = ?, password = ?" +
+		" WHERE id = ?;"
+
+	deleteUserById = "DELETE FROM" + tableName +
+		" WHERE id = ?;"
+
+	// findAllUser = "" +
+	// 	"SELECT " +
+	// 	"id, " +
+	// 	"first_name, " +
+	// 	"last_name, " +
+	// 	"email " +
+	// 	"status " +
+	//  "password " +
+	// 	"FROM " + tableName + ";"
+
+	findUserByStatus = "" +
+		"SELECT " +
+		"id, " +
+		"first_name, " +
+		"last_name, " +
+		"email " +
+		"status " +
+		"password " +
+		"FROM " + tableName +
+		" WHERE status = ?;"
 
 	findUserById = "" +
 		"SELECT " +
-		"u.id, " +
-		"u.first_name, " +
-		"u.last_name, " +
-		"u.email " +
-		"FROM " + tableName + " u " +
-		"WHERE id = ?;"
+		"id, " +
+		"first_name, " +
+		"last_name, " +
+		"email " +
+		"status " +
+		"password " +
+		"FROM " + tableName +
+		" WHERE id = ?;"
 )
 
-func (u *User) Get() *error.RestError {
+func (u *User) Get() *errors.RestError {
 
-	if err := users_db.Client.Ping(); err != nil {
-		panic(err)
-	}
-
-	// TODO: Fix it!
-
-	// result := usersDB[u.Id]
-
-	// if result == nil {
-	// 	return error.NewNotFoundError(fmt.Sprintf("User with id=%d not found.", u.Id))
-	// }
-
-	// u.Id = result.Id
-	// u.FirstName = result.FirstName
-	// u.LastName = result.LastName
-	// u.Email = result.Email
-	// u.CreatedAt = result.CreatedAt
-
-	return nil
-}
-
-func (u *User) Save() *error.RestError {
-
-	stmt, err := users_db.Client.Prepare(insertUser)
+	stmt, err := users_db.Client.Prepare(findUserById)
 	if err != nil {
-		return error.NewInternalServerError(err.Error())
+		return errors.NewInternalServerError(err.Error())
 	}
 
 	defer stmt.Close()
 
-	u.CreatedAt = date_utils.GetNow()
+	result := stmt.QueryRow(u.Id)
+	if getErr := result.Scan(&u.Id, &u.FirstName, &u.LastName, &u.Email, &u.Status, &u.Password); getErr != nil {
+		return mysql_utils.ParseError(getErr)
+	}
 
-	result, err := stmt.Exec(u.FirstName, u.LastName, u.Email, u.CreatedAt)
+	return nil
+}
+
+func (u *User) FindByStatus(s string) ([]User, *errors.RestError) {
+
+	stmt, err := users_db.Client.Prepare(findUserByStatus)
 	if err != nil {
-		if strings.Contains(err.Error(), uniqueEmailIndex) {
-			return error.NewBadRequestError("Email address is already exist")
+		return nil, errors.NewInternalServerError(err.Error())
+	}
+
+	defer stmt.Close()
+
+	rows, err := stmt.Query(s)
+	if err != nil {
+		return nil, errors.NewInternalServerError(err.Error())
+	}
+
+	defer rows.Close()
+
+	results := make([]User, 0)
+	for rows.Next() {
+		var user User
+		if err := rows.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.Status, &u.Password); err != nil {
+			return nil, mysql_utils.ParseError(err)
 		}
-		return error.NewInternalServerError(fmt.Sprintf("Error when trying to save user: %s", err.Error()))
+
+		results = append(results, user)
+	}
+
+	if len(results) == 0 {
+		return nil, errors.NewNotFoundError("No users found.")
+	}
+
+	return results, nil
+}
+
+func (u *User) Update() *errors.RestError {
+
+	stmt, err := users_db.Client.Prepare(updateUser)
+	if err != nil {
+		return errors.NewInternalServerError(err.Error())
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(u.FirstName, u.LastName, u.Email, u.Status, u.Password, u.Id)
+	if err != nil {
+		return mysql_utils.ParseError(err)
+	}
+
+	return nil
+}
+
+func (u *User) Save() *errors.RestError {
+
+	stmt, err := users_db.Client.Prepare(insertUser)
+	if err != nil {
+		return errors.NewInternalServerError(err.Error())
+	}
+
+	defer stmt.Close()
+
+	result, saveErr := stmt.Exec(u.FirstName, u.LastName, u.Email, u.CreatedAt, u.Status, u.Password)
+	if saveErr != nil {
+		return mysql_utils.ParseError(saveErr)
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		return error.NewInternalServerError(fmt.Sprintf("Error when trying to save user: %s", err.Error()))
+		return mysql_utils.ParseError(saveErr)
 	}
 
 	u.Id = id
+
+	return nil
+}
+
+func (u *User) Delete() *errors.RestError {
+
+	stmt, err := users_db.Client.Prepare(deleteUserById)
+	if err != nil {
+		return errors.NewInternalServerError(err.Error())
+	}
+
+	defer stmt.Close()
+
+	if _, err = stmt.Exec(u.Id); err != nil {
+		return mysql_utils.ParseError(err)
+	}
 
 	return nil
 }
