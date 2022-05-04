@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/martikan/bookstore_users-api/domain/user"
 	"github.com/martikan/bookstore_users-api/errors"
-	"github.com/martikan/bookstore_users-api/service/user_service"
+	"github.com/martikan/bookstore_users-api/service"
 )
 
 // Controller for get all users
@@ -24,13 +24,13 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	user, getErr := user_service.Get(userId)
+	user, getErr := service.UserService.Get(userId)
 	if getErr != nil {
 		c.JSON(getErr.Status, getErr)
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, user.Marshall(c.GetHeader("X-Public") == "true"))
 }
 
 // Controller for search a user
@@ -38,13 +38,13 @@ func Search(c *gin.Context) {
 
 	status := c.Query("status")
 
-	users, err := user_service.Search(status)
+	users, err := service.UserService.Search(status)
 	if err != nil {
 		c.JSON(err.Status, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, users)
+	c.JSON(http.StatusOK, users.Marshall(c.GetHeader("X-Public") == "true"))
 }
 
 // Controller for create a new user
@@ -58,13 +58,13 @@ func Create(c *gin.Context) {
 		return
 	}
 
-	result, saveErr := user_service.Create(user)
+	result, saveErr := service.UserService.Create(user)
 	if saveErr != nil {
 		c.JSON(saveErr.Status, saveErr)
 		return
 	}
 
-	c.JSON(http.StatusCreated, result)
+	c.JSON(http.StatusCreated, result.Marshall(c.GetHeader("X-Public") == "true"))
 }
 
 // Controller for updae a user by id
@@ -88,13 +88,13 @@ func Update(c *gin.Context) {
 
 	isPartial := c.Request.Method == http.MethodPatch
 
-	result, err := user_service.Update(isPartial, user)
+	result, err := service.UserService.Update(isPartial, user)
 	if err != nil {
 		c.JSON(err.Status, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, result.Marshall(c.GetHeader("X-Public") == "true"))
 }
 
 // Controller for delete a user by id
@@ -106,7 +106,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	if err := user_service.Delete(userId); err != nil {
+	if err := service.UserService.Delete(userId); err != nil {
 		c.JSON(err.Status, err)
 		return
 	}
@@ -114,6 +114,7 @@ func Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, map[string]string{"status": "deleted"})
 }
 
+// Function to get the id of the user from path parameter
 func getUserId(p string) (int64, *errors.RestError) {
 
 	userId, userErr := strconv.ParseInt(p, 10, 64)

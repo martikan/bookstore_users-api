@@ -20,6 +20,8 @@ type User struct {
 	Password  string `json:"password"`
 }
 
+type Users []User
+
 // Method for validate a user
 func (u *User) Validate() *errors.RestError {
 
@@ -56,10 +58,7 @@ func (u *User) Validate() *errors.RestError {
 	}
 
 	u.Status = strings.TrimSpace(strings.ToLower(u.Status))
-	if u.Status == "" {
-		return errors.NewBadRequestError("Status is required.")
-	}
-	if u.Status != "active" && u.Status != "inactive" {
+	if u.Status != "" && u.Status != "active" && u.Status != "inactive" {
 		return errors.NewBadRequestError("Status can be 'active' or 'inactive' only.")
 	}
 
