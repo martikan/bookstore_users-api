@@ -10,12 +10,19 @@ import (
 	"github.com/martikan/bookstore_users-api/service"
 )
 
-// Controller for get all users
+// GetAll Controller for get all users
 func GetAll(c *gin.Context) {
-	c.String(http.StatusNotImplemented, "Implement me!")
+
+	users, err := service.UserService.GetAll()
+	if err != nil {
+		c.JSON(err.Status, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, users.Marshall(c.GetHeader("X-Public") == "true"))
 }
 
-// Controller for find a user by id
+// Get Controller for find a user by id
 func Get(c *gin.Context) {
 
 	userId, userErr := getUserId(c.Param("id"))
@@ -24,16 +31,16 @@ func Get(c *gin.Context) {
 		return
 	}
 
-	user, getErr := service.UserService.Get(userId)
+	usr, getErr := service.UserService.Get(userId)
 	if getErr != nil {
 		c.JSON(getErr.Status, getErr)
 		return
 	}
 
-	c.JSON(http.StatusOK, user.Marshall(c.GetHeader("X-Public") == "true"))
+	c.JSON(http.StatusOK, usr.Marshall(c.GetHeader("X-Public") == "true"))
 }
 
-// Controller for search a user
+// Search Controller for search a user
 func Search(c *gin.Context) {
 
 	status := c.Query("status")
@@ -47,18 +54,18 @@ func Search(c *gin.Context) {
 	c.JSON(http.StatusOK, users.Marshall(c.GetHeader("X-Public") == "true"))
 }
 
-// Controller for create a new user
+// Create Controller for create a new user
 func Create(c *gin.Context) {
 
-	var user user.User
+	var usr user.User
 
-	if err := c.ShouldBindJSON(&user); err != nil {
+	if err := c.ShouldBindJSON(&usr); err != nil {
 		restError := errors.NewBadRequestError("Invalid json body.")
 		c.JSON(restError.Status, restError)
 		return
 	}
 
-	result, saveErr := service.UserService.Create(user)
+	result, saveErr := service.UserService.Create(usr)
 	if saveErr != nil {
 		c.JSON(saveErr.Status, saveErr)
 		return
@@ -67,7 +74,7 @@ func Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, result.Marshall(c.GetHeader("X-Public") == "true"))
 }
 
-// Controller for updae a user by id
+// Update Controller for update a user by id
 func Update(c *gin.Context) {
 
 	userId, userErr := getUserId(c.Param("id"))
@@ -76,19 +83,19 @@ func Update(c *gin.Context) {
 		return
 	}
 
-	var user user.User
+	var usr user.User
 
-	if err := c.ShouldBindJSON(&user); err != nil {
+	if err := c.ShouldBindJSON(&usr); err != nil {
 		restError := errors.NewBadRequestError("Invalid json body.")
 		c.JSON(restError.Status, restError)
 		return
 	}
 
-	user.Id = userId
+	usr.Id = userId
 
 	isPartial := c.Request.Method == http.MethodPatch
 
-	result, err := service.UserService.Update(isPartial, user)
+	result, err := service.UserService.Update(isPartial, usr)
 	if err != nil {
 		c.JSON(err.Status, err)
 		return
@@ -97,7 +104,7 @@ func Update(c *gin.Context) {
 	c.JSON(http.StatusOK, result.Marshall(c.GetHeader("X-Public") == "true"))
 }
 
-// Controller for delete a user by id
+// Delete Controller for delete a user by id
 func Delete(c *gin.Context) {
 
 	userId, userErr := getUserId(c.Param("id"))

@@ -17,8 +17,8 @@ type PrivateUser struct {
 	Status    string `json:"status"`
 }
 
-// Function for Marshall request/response for User struct.
-// If `public` is true, than it will use the public user 'schema'
+// Marshall Function for Marshall request/response for User struct.
+// If `public` is true, then it will use the public user 'schema'
 // If `public` is false, it will use the private user 'schema'
 func (u *User) Marshall(public bool) interface{} {
 
@@ -38,11 +38,11 @@ func (u *User) Marshall(public bool) interface{} {
 	return privateUser
 }
 
-func (usrs Users) Marshall(public bool) []interface{} {
-	resultset := make([]interface{}, len(usrs))
-	for i, u := range usrs {
-		resultset[i] = u.Marshall(public)
+func (users Users) Marshall(public bool) []interface{} {
+	result := make([]interface{}, len(users))
+	for i, u := range users {
+		result[i] = u.Marshall(public)
 	}
 
-	return resultset
+	return result
 }

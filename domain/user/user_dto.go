@@ -22,7 +22,7 @@ type User struct {
 
 type Users []User
 
-// Method for validate a user
+// Validate Method for validate a user
 func (u *User) Validate() *errors.RestError {
 
 	u.FirstName = strings.TrimSpace(u.FirstName)

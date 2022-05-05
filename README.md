@@ -25,7 +25,7 @@
             "env": {
                 "mysql_users_db_username": "<<your_database_username>>",
                 "mysql_users_db_password": "<<your_database_password>>",
-                "mysql_users_db_uri": "<<your_database_host>>", // fe.: 127.0.0.1:3306
+                "mysql_users_db_uri": "<<your_database_host>>",
                 "mysql_users_db_database": "<<your_database_name>>"
             }
         }

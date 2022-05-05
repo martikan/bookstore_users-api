@@ -3,8 +3,7 @@ package service
 import (
 	"github.com/martikan/bookstore_users-api/domain/user"
 	"github.com/martikan/bookstore_users-api/errors"
-	"github.com/martikan/bookstore_users-api/util/crypto_utils"
-	"github.com/martikan/bookstore_users-api/util/date_utils"
+	"github.com/martikan/bookstore_users-api/utils"
 )
 
 var (
@@ -16,14 +15,31 @@ type userService struct {
 
 // Interface for User service
 type userServiceInterface interface {
+
+	// GetAll Function for get all users
+	GetAll() (user.Users, *errors.RestError)
+
+	// Get Function for get a user by id
 	Get(int64) (*user.User, *errors.RestError)
+
+	// Search Function for search a user
 	Search(string) (user.Users, *errors.RestError)
+
+	// Create Function for create a user
 	Create(user.User) (*user.User, *errors.RestError)
+
+	// Update Function for update a user by id
 	Update(bool, user.User) (*user.User, *errors.RestError)
+
+	// Delete Function for delete a user by id
 	Delete(int64) *errors.RestError
 }
 
-// Function for get a user by id
+func (s *userService) GetAll() (user.Users, *errors.RestError) {
+	dao := &user.User{}
+	return dao.GetAll()
+}
+
 func (s *userService) Get(id int64) (*user.User, *errors.RestError) {
 
 	result := &user.User{Id: id}
@@ -35,13 +51,11 @@ func (s *userService) Get(id int64) (*user.User, *errors.RestError) {
 	return result, nil
 }
 
-// Function for search a user
 func (s *userService) Search(str string) (user.Users, *errors.RestError) {
 	dao := &user.User{}
 	return dao.FindByStatus(str)
 }
 
-// Function for create a user
 func (s *userService) Create(u user.User) (*user.User, *errors.RestError) {
 
 	if err := u.Validate(); err != nil {
@@ -49,10 +63,10 @@ func (s *userService) Create(u user.User) (*user.User, *errors.RestError) {
 	}
 
 	u.Status = user.StatusActive
-	u.CreatedAt = date_utils.GetNowDBFormat()
+	u.CreatedAt = utils.DateUtils.GetNowDBFormat()
 
 	// Encrypt password
-	passwordHash, hashingErr := crypto_utils.HashPassword(u.Password)
+	passwordHash, hashingErr := utils.CryptoUtils.HashPassword(u.Password)
 	if hashingErr != nil {
 		return nil, hashingErr
 	}
@@ -65,7 +79,6 @@ func (s *userService) Create(u user.User) (*user.User, *errors.RestError) {
 	return &u, nil
 }
 
-// Function for update a user by id
 func (s *userService) Update(partial bool, u user.User) (*user.User, *errors.RestError) {
 
 	currentUser, err := UserService.Get(u.Id)
@@ -96,8 +109,7 @@ func (s *userService) Update(partial bool, u user.User) (*user.User, *errors.Res
 	return currentUser, nil
 }
 
-// Function for delete a user by id
 func (s *userService) Delete(id int64) *errors.RestError {
-	user := &user.User{Id: id}
-	return user.Delete()
+	u := &user.User{Id: id}
+	return u.Delete()
 }

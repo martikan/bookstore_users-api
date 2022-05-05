@@ -1,4 +1,4 @@
-package crypto_utils
+package utils
 
 import (
 	"github.com/martikan/bookstore_users-api/errors"
@@ -6,8 +6,19 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Hasing password with Bcrypt
-func HashPassword(input string) (string, *errors.RestError) {
+var (
+	CryptoUtils cryptoUtilsInterface = &cryptoUtils{}
+)
+
+type cryptoUtils struct {
+}
+
+type cryptoUtilsInterface interface {
+	HashPassword(input string) (string, *errors.RestError)
+}
+
+// HashPassword Hashing password with Bcrypt
+func (c *cryptoUtils) HashPassword(input string) (string, *errors.RestError) {
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(input), bcrypt.DefaultCost)
 	if err != nil {

@@ -22,18 +22,16 @@ const (
 	deleteUserById = "DELETE FROM" + tableName +
 		" WHERE id = ?;"
 
-	// findAllUser = "" +
-	// 	"SELECT " +
-	// 	"id, " +
-	// 	"first_name, " +
-	// 	"last_name, " +
-	// 	"email, " +
-	// 	"status, " +
-	//  "password " +
-	// 	"FROM " + tableName + ";"
+	findAllUser = "SELECT " +
+		"id, " +
+		"first_name, " +
+		"last_name, " +
+		"email, " +
+		"status, " +
+		"password " +
+		"FROM " + tableName + ";"
 
-	findUserByStatus = "" +
-		"SELECT " +
+	findUserByStatus = "SELECT " +
 		"id, " +
 		"first_name, " +
 		"last_name, " +
@@ -43,8 +41,7 @@ const (
 		"FROM " + tableName +
 		" WHERE status = ?;"
 
-	findUserById = "" +
-		"SELECT " +
+	findUserById = "SELECT " +
 		"id, " +
 		"first_name, " +
 		"last_name, " +
@@ -54,6 +51,41 @@ const (
 		"FROM " + tableName +
 		" WHERE id = ?;"
 )
+
+func (u *User) GetAll() ([]User, *errors.RestError) {
+
+	stmt, err := users_db.Client.Prepare(findAllUser)
+	if err != nil {
+		logger.Error("Error when trying to prepare Get all users statement", err)
+		return nil, errors.NewInternalServerError("Database error")
+	}
+
+	defer stmt.Close()
+
+	rows, err := stmt.Query()
+	if err != nil {
+		logger.Error("Error when trying to Find all users", err)
+		return nil, errors.NewInternalServerError("Database error")
+	}
+
+	defer rows.Close()
+
+	results := make([]User, 0)
+	for rows.Next() {
+		var user User
+		if err := rows.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.Status, &u.Password); err != nil {
+			logger.Error("Error when trying to scan user rows into user structs", err)
+			return nil, errors.NewInternalServerError("Database error")
+		}
+		results = append(results, user)
+	}
+
+	if len(results) == 0 {
+		return nil, errors.NewNotFoundError("No users found.")
+	}
+
+	return results, nil
+}
 
 func (u *User) Get() *errors.RestError {
 
@@ -99,7 +131,6 @@ func (u *User) FindByStatus(s string) ([]User, *errors.RestError) {
 			logger.Error("Error when trying to scan user rows into user structs", err)
 			return nil, errors.NewInternalServerError("Database error")
 		}
-
 		results = append(results, user)
 	}
 
